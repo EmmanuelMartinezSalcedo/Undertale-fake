@@ -6,14 +6,21 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+
+[Serializable]
+public class InitData
+{
+    public bool init;
+    public int frame_width;
+    public int frame_height;
+}
 
 [System.Serializable]
 public class HeadData
 {
     public HeadPosition head_position;
     public string frame_data;
-    public int frame_width;
-    public int frame_height;
 }
 
 [System.Serializable]
@@ -33,9 +40,16 @@ public class HeadTrackingReceiver : MonoBehaviour
     public SpriteRenderer backgroundSpriteRenderer;
     public PlayerController player;
     public Camera mainCamera;
+    public SpawnArrowsController spawnArrowsController;
 
     [Header("Configuración")]
     public float smoothingFactor = 0.8f;
+
+    private bool isInitialized = false;
+
+    private bool initDataReceived = false;
+    private int initFrameWidth = 0;
+    private int initFrameHeight = 0;
 
     private TcpClient tcpClient;
     private NetworkStream stream;
@@ -54,7 +68,6 @@ public class HeadTrackingReceiver : MonoBehaviour
     void Start()
     {
         webcamTexture = new Texture2D(2, 2);
-
         ConnectToServer();
     }
 
@@ -123,9 +136,18 @@ public class HeadTrackingReceiver : MonoBehaviour
 
             try
             {
-                HeadData headData = JsonConvert.DeserializeObject<HeadData>(jsonMessage);
-                latestHeadData = headData;
-                hasNewData = true;
+                var tempObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonMessage);
+                if (tempObj != null && tempObj.ContainsKey("init") && (bool)tempObj["init"] == true)
+                {
+                    InitData initData = JsonConvert.DeserializeObject<InitData>(jsonMessage);
+                    OnInitDataReceived(initData);
+                }
+                else
+                {
+                    HeadData headData = JsonConvert.DeserializeObject<HeadData>(jsonMessage);
+                    latestHeadData = headData;
+                    hasNewData = true;
+                }
             }
             catch (Exception e)
             {
@@ -137,8 +159,48 @@ public class HeadTrackingReceiver : MonoBehaviour
         messageBuffer.Append(bufferContent);
     }
 
+    void OnInitDataReceived(InitData initData)
+    {
+        initFrameWidth = initData.frame_width;
+        initFrameHeight = initData.frame_height;
+        initDataReceived = true;
+    }
+
     void Update()
     {
+        if (initDataReceived && !isInitialized && initFrameWidth > 0 && initFrameHeight > 0 && backgroundSpriteRenderer != null)
+        {
+            Camera cam = mainCamera != null ? mainCamera : Camera.main;
+            if (cam == null)
+            {
+                Debug.LogWarning("No se encontró la cámara asignada ni la Main Camera");
+                return;
+            }
+
+            float camHeight = cam.orthographicSize * 2f;
+            float camWidth = camHeight * cam.aspect;
+
+            float pixelsPerUnit = 100f;
+            float spriteWidth = initFrameWidth / pixelsPerUnit;
+            float spriteHeight = initFrameHeight / pixelsPerUnit;
+
+            float scaleX = camWidth / spriteWidth;
+            float scaleY = camHeight / spriteHeight;
+
+            float scale = Mathf.Min(scaleX, scaleY);
+
+            backgroundSpriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
+            backgroundSpriteRenderer.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 0);
+
+            isInitialized = true;
+            initDataReceived = false;
+
+            if (spawnArrowsController != null)
+            {
+                spawnArrowsController.InitializeWithBackground(backgroundSpriteRenderer);
+            }
+        }
+
         if (hasNewData && latestHeadData != null)
         {
             ProcessHeadData(latestHeadData);
@@ -163,9 +225,7 @@ public class HeadTrackingReceiver : MonoBehaviour
 
             player.SetTargetPosition(worldPos);
         }
-
     }
-
 
     void ProcessHeadData(HeadData data)
     {
@@ -181,28 +241,6 @@ public class HeadTrackingReceiver : MonoBehaviour
                     new Vector2(0.5f, 0.5f));
                 backgroundSpriteRenderer.sprite = newSprite;
 
-                Camera cam = mainCamera != null ? mainCamera : Camera.main;
-                if (cam == null)
-                {
-                    Debug.LogWarning("No se encontró la cámara asignada ni la Main Camera");
-                    return;
-                }
-
-                float camHeight = cam.orthographicSize * 2f;
-                float camWidth = camHeight * cam.aspect;
-
-                float pixelsPerUnit = newSprite.pixelsPerUnit;
-                float spriteWidth = webcamTexture.width / pixelsPerUnit;
-                float spriteHeight = webcamTexture.height / pixelsPerUnit;
-
-                float scaleX = camWidth / spriteWidth;
-                float scaleY = camHeight / spriteHeight;
-
-                float scale = Mathf.Min(scaleX, scaleY);
-
-                backgroundSpriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
-
-                backgroundSpriteRenderer.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 0);
             }
             catch (Exception e)
             {

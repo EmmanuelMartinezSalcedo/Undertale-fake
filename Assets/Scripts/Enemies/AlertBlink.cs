@@ -7,7 +7,7 @@ public class AlertBlink : MonoBehaviour
     public int blinkCount = 3;
     public float blinkDuration = 0.2f;
 
-    public UnityEvent OnBlinkComplete; // Evento que dispara cuando termina
+    public UnityEvent OnBlinkComplete;
 
     private SpriteRenderer spriteRenderer;
 

@@ -14,7 +14,6 @@ public class ArrowEnemy : MonoBehaviour
         isTracking = true;
     }
 
-    // Método para que la flecha deje de trackear y dispare
     public void Shoot()
     {
         isTracking = false;

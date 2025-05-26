@@ -57,32 +57,52 @@ class HeadTracker:
         return None
     
     def process_and_send(self, client_socket):
+        # Obtener una vez las dimensiones del frame
+        ret, frame = self.cap.read()
+        if not ret:
+            print("No se pudo capturar el primer frame.")
+            return
+
+        frame = cv2.flip(frame, 1)
+        frame_height, frame_width = frame.shape[:2]
+
+        # Enviar las dimensiones solo una vez al inicio
+        init_data = {
+            'init': True,
+            'frame_width': frame_width,
+            'frame_height': frame_height
+        }
+        try:
+            init_json = json.dumps(init_data)
+            init_message = f"{len(init_json)}:{init_json}"
+            client_socket.send(init_message.encode('utf-8'))
+        except Exception as e:
+            print(f"Error enviando datos iniciales: {e}")
+            return
+
+        # Comienza el bucle principal de envío de frames y posiciones
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
                 print("Error al capturar frame")
                 break
-            
-            frame = cv2.flip(frame, 1)
-            frame_height, frame_width = frame.shape[:2]
 
+            frame = cv2.flip(frame, 1)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.face_mesh.process(rgb_frame)
-            
+
             head_position = None
             if results.multi_face_landmarks:
                 head_position = self.get_nose_position(results.multi_face_landmarks[0])
-            
+
             _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
             frame_b64 = base64.b64encode(buffer).decode('utf-8')
-            
+
             data = {
                 'head_position': head_position,
-                'frame_data': frame_b64,
-                'frame_width': frame_width,
-                'frame_height': frame_height
+                'frame_data': frame_b64
             }
-            
+
             try:
                 json_data = json.dumps(data)
                 message = f"{len(json_data)}:{json_data}"
@@ -90,8 +110,9 @@ class HeadTracker:
             except Exception as e:
                 print(f"Error enviando datos: {e}")
                 break
-        
+
         client_socket.close()
+
     
     def cleanup(self):
         self.running = False

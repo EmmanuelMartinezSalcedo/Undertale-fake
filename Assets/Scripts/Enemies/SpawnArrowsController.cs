@@ -3,137 +3,154 @@ using UnityEngine;
 
 public class SpawnArrowsController : MonoBehaviour
 {
-    public int arrowCount = 3;
+    [Header("Prefabs")]
     public GameObject arrowPrefab;
     public GameObject alertPrefab;
-    public Transform playerTransform;
 
-    // Distancia fuera de cámara donde se generarán las flechas
-    public float spawnDistance = 10f;
+    [Header("Arrow Settings")]
+    public int arrowCount = 3;
+    public float arrowSpeed = 5f;
+    public int alertBlinkCount = 3;
+    public float alertBlinkDuration = 0.2f;
+
+    [Header("References")]
+    public Transform playerTransform;
+    private SpriteRenderer backgroundSprite;
+
+    private float spawnDistance = 1f;
+    private float alertOffset = 0.2f;
 
     private List<ArrowEnemy> arrows = new List<ArrowEnemy>();
     private List<AlertBlink> alerts = new List<AlertBlink>();
 
-    private Camera mainCamera;
+    private bool initialized = false;
 
-    void Start()
+    public void InitializeWithBackground(SpriteRenderer background)
     {
-        mainCamera = Camera.main;
+        if (initialized) return;
+
+        backgroundSprite = background;
+
+        if (backgroundSprite == null)
+        {
+            Debug.LogError("BackgroundSpriteRenderer no puede ser nulo");
+            return;
+        }
+
+        Vector2 baseSize = backgroundSprite.sprite.bounds.size;
+        Vector3 spriteScale = backgroundSprite.transform.localScale;
+
+        float averageSize = (baseSize.x + baseSize.y) / 2f;
+        float averageScale = (spriteScale.x + spriteScale.y) / 2f;
+
+        spawnDistance = averageSize * averageScale * 0.5f;
+        alertOffset = averageSize * averageScale * 0.05f;
+
+        initialized = true;
         SpawnArrowsAndAlerts();
     }
+
 
     void SpawnArrowsAndAlerts()
     {
         for (int i = 0; i < arrowCount; i++)
         {
-            Vector3 spawnPos = GetRandomSpawnPositionOutsideCamera();
+            int spawnEdge;
+            Vector3 spawnPos = GetRandomSpawnPositionOutsideBackground(out spawnEdge);
 
-            // Instanciar flecha
             GameObject arrowObj = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
             ArrowEnemy arrowEnemy = arrowObj.GetComponent<ArrowEnemy>();
+            arrowEnemy.speed = arrowSpeed;
             arrowEnemy.Initialize(playerTransform);
             arrows.Add(arrowEnemy);
 
-            // Instanciar alerta en borde cerca de la flecha
-            Vector3 alertPos = GetAlertPositionNear(spawnPos);
+            Vector3 alertPos = GetAlertPositionForEdge(spawnPos, spawnEdge);
             GameObject alertObj = Instantiate(alertPrefab, alertPos, Quaternion.identity);
 
             AlertBlink alertBlink = alertObj.GetComponent<AlertBlink>();
+            alertBlink.blinkCount = alertBlinkCount;
+            alertBlink.blinkDuration = alertBlinkDuration;
             alertBlink.OnBlinkComplete.AddListener(() => OnAlertComplete(arrowEnemy));
             alerts.Add(alertBlink);
         }
     }
 
-    Vector3 GetRandomSpawnPositionOutsideCamera()
+    Vector3 GetRandomSpawnPositionOutsideBackground(out int edge)
     {
-        // Obtener los límites de la cámara en world coordinates
-        Vector3 camPos = mainCamera.transform.position;
-        float camHeight = 2f * mainCamera.orthographicSize;
-        float camWidth = camHeight * mainCamera.aspect;
+        Vector3 bgCenter = backgroundSprite.transform.position;
 
-        // Elegir un borde aleatorio: 0 = arriba, 1 = derecha, 2 = abajo, 3 = izquierda
-        int edge = Random.Range(0, 4);
+        Vector2 baseSize = backgroundSprite.sprite.bounds.size;
+        Vector3 scale = backgroundSprite.transform.localScale;
+        Vector2 size = new Vector2(baseSize.x * scale.x, baseSize.y * scale.y);
+
+        float left = bgCenter.x - size.x / 2f;
+        float right = bgCenter.x + size.x / 2f;
+        float top = bgCenter.y + size.y / 2f;
+        float bottom = bgCenter.y - size.y / 2f;
+
+        edge = Random.Range(0, 4);
         Vector3 pos = Vector3.zero;
 
         switch (edge)
         {
-            case 0: // arriba
-                pos = new Vector3(
-                    Random.Range(camPos.x - camWidth / 2f, camPos.x + camWidth / 2f),
-                    camPos.y + camHeight / 2f + spawnDistance,
-                    0);
+            case 0:
+                pos = new Vector3(Random.Range(left, right), top + spawnDistance, 0);
                 break;
-            case 1: // derecha
-                pos = new Vector3(
-                    camPos.x + camWidth / 2f + spawnDistance,
-                    Random.Range(camPos.y - camHeight / 2f, camPos.y + camHeight / 2f),
-                    0);
+            case 1:
+                pos = new Vector3(right + spawnDistance, Random.Range(bottom, top), 0);
                 break;
-            case 2: // abajo
-                pos = new Vector3(
-                    Random.Range(camPos.x - camWidth / 2f, camPos.x + camWidth / 2f),
-                    camPos.y - camHeight / 2f - spawnDistance,
-                    0);
+            case 2:
+                pos = new Vector3(Random.Range(left, right), bottom - spawnDistance, 0);
                 break;
-            case 3: // izquierda
-                pos = new Vector3(
-                    camPos.x - camWidth / 2f - spawnDistance,
-                    Random.Range(camPos.y - camHeight / 2f, camPos.y + camHeight / 2f),
-                    0);
+            case 3:
+                pos = new Vector3(left - spawnDistance, Random.Range(bottom, top), 0);
                 break;
         }
+
         return pos;
     }
 
-    Vector3 GetAlertPositionNear(Vector3 spawnPos)
+    Vector3 GetAlertPositionForEdge(Vector3 spawnPos, int spawnEdge)
     {
-        Vector3 camPos = mainCamera.transform.position;
-        float camHeight = 2f * mainCamera.orthographicSize;
-        float camWidth = camHeight * mainCamera.aspect;
+        Vector3 bgCenter = backgroundSprite.transform.position;
 
-        // Limites de cámara
-        float left = camPos.x - camWidth / 2f;
-        float right = camPos.x + camWidth / 2f;
-        float top = camPos.y + camHeight / 2f;
-        float bottom = camPos.y - camHeight / 2f;
+        Vector2 baseSize = backgroundSprite.sprite.bounds.size;
+        Vector3 scale = backgroundSprite.transform.localScale;
+        Vector2 size = new Vector2(baseSize.x * scale.x, baseSize.y * scale.y);
 
-        Vector3 alertPos = spawnPos;
+        float left = bgCenter.x - size.x / 2f;
+        float right = bgCenter.x + size.x / 2f;
+        float top = bgCenter.y + size.y / 2f;
+        float bottom = bgCenter.y - size.y / 2f;
 
-        // Si la flecha está fuera arriba, alerta en top
-        if (spawnPos.y > top)
+        Vector3 alertPos = Vector3.zero;
+
+        switch (spawnEdge)
         {
-            alertPos.y = top - 0.5f; // un poco dentro de cámara
-            alertPos.x = Mathf.Clamp(spawnPos.x, left + 0.5f, right - 0.5f);
-        }
-        // Si fuera abajo
-        else if (spawnPos.y < bottom)
-        {
-            alertPos.y = bottom + 0.5f;
-            alertPos.x = Mathf.Clamp(spawnPos.x, left + 0.5f, right - 0.5f);
-        }
-        // Si fuera derecha
-        else if (spawnPos.x > right)
-        {
-            alertPos.x = right - 0.5f;
-            alertPos.y = Mathf.Clamp(spawnPos.y, bottom + 0.5f, top - 0.5f);
-        }
-        // Si fuera izquierda
-        else if (spawnPos.x < left)
-        {
-            alertPos.x = left + 0.5f;
-            alertPos.y = Mathf.Clamp(spawnPos.y, bottom + 0.5f, top - 0.5f);
+            case 0:
+                alertPos.x = Mathf.Clamp(spawnPos.x, left + alertOffset, right - alertOffset);
+                alertPos.y = top - alertOffset;
+                break;
+            case 1:
+                alertPos.x = right - alertOffset;
+                alertPos.y = Mathf.Clamp(spawnPos.y, bottom + alertOffset, top - alertOffset);
+                break;
+            case 2:
+                alertPos.x = Mathf.Clamp(spawnPos.x, left + alertOffset, right - alertOffset);
+                alertPos.y = bottom + alertOffset;
+                break;
+            case 3:
+                alertPos.x = left + alertOffset;
+                alertPos.y = Mathf.Clamp(spawnPos.y, bottom + alertOffset, top - alertOffset);
+                break;
         }
 
-        alertPos.z = 0; // asegurarse que esté en la capa correcta
-
+        alertPos.z = 0;
         return alertPos;
     }
 
     void OnAlertComplete(ArrowEnemy arrow)
     {
-        // Cuando el alert terminó, la flecha dispara
         arrow.Shoot();
-
-        // Podrías también destruir o desactivar el alert aquí si quieres
     }
 }
