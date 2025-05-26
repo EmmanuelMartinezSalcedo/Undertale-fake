@@ -209,8 +209,8 @@ public class HeadTrackingReceiver : MonoBehaviour
 
         if (player != null && backgroundSpriteRenderer != null)
         {
-            smoothedPosition = Vector2.Lerp(smoothedPosition, targetPosition, smoothingFactor * Time.deltaTime);
-
+            //smoothedPosition = Vector2.Lerp(smoothedPosition, targetPosition, smoothingFactor * Time.deltaTime);
+            smoothedPosition = targetPosition;
             Vector3 spriteScale = backgroundSpriteRenderer.transform.localScale;
             float spriteWidth = backgroundSpriteRenderer.sprite.bounds.size.x * spriteScale.x;
             float spriteHeight = backgroundSpriteRenderer.sprite.bounds.size.y * spriteScale.y;
@@ -223,7 +223,7 @@ public class HeadTrackingReceiver : MonoBehaviour
 
             Vector3 worldPos = new Vector3(worldX, worldY, 0f);
 
-            player.SetTargetPosition(worldPos);
+            player.SetTargetPosition(worldPos); // Aquí es donde se actualiza la posición
         }
     }
 
