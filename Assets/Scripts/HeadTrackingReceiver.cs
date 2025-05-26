@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -12,8 +10,6 @@ using Newtonsoft.Json;
 [System.Serializable]
 public class HeadData
 {
-    public int frame_id;
-    public float timestamp;
     public HeadPosition head_position;
     public string frame_data;
     public int frame_width;
@@ -23,9 +19,6 @@ public class HeadData
 [System.Serializable]
 public class HeadPosition
 {
-    public float x;
-    public float y;
-    public float z;  // Profundidad
     public float normalized_x;
     public float normalized_y;
 }
@@ -36,14 +29,12 @@ public class HeadTrackingReceiver : MonoBehaviour
     public string serverIP = "127.0.0.1";
     public int serverPort = 12345;
 
-    [Header("UI Elements")]
-    public RawImage backgroundImage;  // Para mostrar la webcam
+    [Header("Elementos de escena")]
+    public SpriteRenderer backgroundSpriteRenderer;  // Reemplazo del RawImage
     public Transform headIndicator;   // GameObject que representa la posición de la cabeza
-    public TextMeshProUGUI statusText;           // Texto de estado
-    public TextMeshProUGUI positionText;         // Texto que muestra la posición
+    public Camera mainCamera;
 
     [Header("Configuración")]
-    public bool showDebugInfo = true;
     public float smoothingFactor = 0.8f;  // Para suavizar el movimiento
 
     private TcpClient tcpClient;
@@ -64,10 +55,6 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     void Start()
     {
-        // Configurar UI inicial
-        if (statusText != null)
-            statusText.text = "Conectando...";
-
         // Inicializar textura para la webcam
         webcamTexture = new Texture2D(2, 2);
 
@@ -83,9 +70,6 @@ public class HeadTrackingReceiver : MonoBehaviour
             stream = tcpClient.GetStream();
             isConnected = true;
 
-            if (statusText != null)
-                statusText.text = "Conectado";
-
             // Iniciar hilo para recibir datos
             receiveThread = new Thread(ReceiveData);
             receiveThread.Start();
@@ -93,8 +77,6 @@ public class HeadTrackingReceiver : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError($"Error conectando al servidor: {e.Message}");
-            if (statusText != null)
-                statusText.text = $"Error: {e.Message}";
         }
     }
 
@@ -170,33 +152,66 @@ public class HeadTrackingReceiver : MonoBehaviour
             hasNewData = false;
         }
 
-        // Suavizar movimiento del indicador de cabeza
-        if (headIndicator != null)
+        if (headIndicator != null && backgroundSpriteRenderer != null)
         {
             smoothedPosition = Vector2.Lerp(smoothedPosition, targetPosition, smoothingFactor * Time.deltaTime);
 
-            // Convertir coordenadas normalizadas a coordenadas de pantalla
-            Vector3 screenPos = new Vector3(
-                smoothedPosition.x * Screen.width,
-                (1 - smoothedPosition.y) * Screen.height, // Invertir Y
-                0
-            );
+            // Obtener tamaño del sprite en unidades mundo
+            Vector3 spriteScale = backgroundSpriteRenderer.transform.localScale;
+            float spriteWidth = backgroundSpriteRenderer.sprite.bounds.size.x * spriteScale.x;
+            float spriteHeight = backgroundSpriteRenderer.sprite.bounds.size.y * spriteScale.y;
 
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10));
+            // Clamp de la posición normalizada para que se quede dentro del sprite
+            float clampedX = Mathf.Clamp(smoothedPosition.x, 0f, 1f);
+            float clampedY = Mathf.Clamp(1f - smoothedPosition.y, 0f, 1f);
+
+            // Convertir la posición normalizada clampada a posición en unidades mundo relativas al centro del sprite
+            float worldX = backgroundSpriteRenderer.transform.position.x - spriteWidth / 2f + clampedX * spriteWidth;
+            float worldY = backgroundSpriteRenderer.transform.position.y - spriteHeight / 2f + clampedY * spriteHeight;
+
+            Vector3 worldPos = new Vector3(worldX, worldY, headIndicator.position.z);
+
             headIndicator.position = worldPos;
         }
     }
 
+
     void ProcessHeadData(HeadData data)
     {
-        // Actualizar imagen de fondo (webcam)
-        if (!string.IsNullOrEmpty(data.frame_data) && backgroundImage != null)
+        if (!string.IsNullOrEmpty(data.frame_data) && backgroundSpriteRenderer != null)
         {
             try
             {
                 byte[] imageBytes = Convert.FromBase64String(data.frame_data);
                 webcamTexture.LoadImage(imageBytes);
-                backgroundImage.texture = webcamTexture;
+
+                Sprite newSprite = Sprite.Create(webcamTexture,
+                    new Rect(0, 0, webcamTexture.width, webcamTexture.height),
+                    new Vector2(0.5f, 0.5f));
+                backgroundSpriteRenderer.sprite = newSprite;
+
+                Camera cam = mainCamera != null ? mainCamera : Camera.main;
+                if (cam == null)
+                {
+                    Debug.LogWarning("No se encontró la cámara asignada ni la Main Camera");
+                    return;
+                }
+
+                float camHeight = cam.orthographicSize * 2f;
+                float camWidth = camHeight * cam.aspect;
+
+                float pixelsPerUnit = newSprite.pixelsPerUnit;
+                float spriteWidth = webcamTexture.width / pixelsPerUnit;
+                float spriteHeight = webcamTexture.height / pixelsPerUnit;
+
+                float scaleX = camWidth / spriteWidth;
+                float scaleY = camHeight / spriteHeight;
+
+                float scale = Mathf.Min(scaleX, scaleY);
+
+                backgroundSpriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
+
+                backgroundSpriteRenderer.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 0);
             }
             catch (Exception e)
             {
@@ -204,26 +219,12 @@ public class HeadTrackingReceiver : MonoBehaviour
             }
         }
 
-        // Actualizar posición de la cabeza
         if (data.head_position != null)
         {
             targetPosition = new Vector2(
                 data.head_position.normalized_x,
                 data.head_position.normalized_y
             );
-
-            // Actualizar texto de posición
-            if (positionText != null && showDebugInfo)
-            {
-                positionText.text = $"Nariz: ({data.head_position.x:F1}, {data.head_position.y:F1}, {data.head_position.z:F3})\n" +
-                                  $"Normalizada: ({data.head_position.normalized_x:F3}, {data.head_position.normalized_y:F3})";
-            }
-        }
-
-        // Actualizar texto de estado
-        if (statusText != null && showDebugInfo)
-        {
-            statusText.text = $"Frame: {data.frame_id} | {data.frame_width}x{data.frame_height}";
         }
     }
 
