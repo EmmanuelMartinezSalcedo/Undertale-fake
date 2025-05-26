@@ -30,12 +30,12 @@ public class HeadTrackingReceiver : MonoBehaviour
     public int serverPort = 12345;
 
     [Header("Elementos de escena")]
-    public SpriteRenderer backgroundSpriteRenderer;  // Reemplazo del RawImage
-    public Transform headIndicator;   // GameObject que representa la posición de la cabeza
+    public SpriteRenderer backgroundSpriteRenderer;
+    public PlayerController player;
     public Camera mainCamera;
 
     [Header("Configuración")]
-    public float smoothingFactor = 0.8f;  // Para suavizar el movimiento
+    public float smoothingFactor = 0.8f;
 
     private TcpClient tcpClient;
     private NetworkStream stream;
@@ -43,22 +43,18 @@ public class HeadTrackingReceiver : MonoBehaviour
     private bool isConnected = false;
     private bool shouldStop = false;
 
-    // Variables para el procesamiento de datos
     private Texture2D webcamTexture;
     private HeadData latestHeadData;
     private bool hasNewData = false;
     private Vector2 smoothedPosition;
     private Vector2 targetPosition;
 
-    // Buffer para recibir datos
     private StringBuilder messageBuffer = new StringBuilder();
 
     void Start()
     {
-        // Inicializar textura para la webcam
         webcamTexture = new Texture2D(2, 2);
 
-        // Conectar al servidor Python
         ConnectToServer();
     }
 
@@ -70,7 +66,6 @@ public class HeadTrackingReceiver : MonoBehaviour
             stream = tcpClient.GetStream();
             isConnected = true;
 
-            // Iniciar hilo para recibir datos
             receiveThread = new Thread(ReceiveData);
             receiveThread.Start();
         }
@@ -82,7 +77,7 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     void ReceiveData()
     {
-        byte[] buffer = new byte[1024 * 1024]; // Buffer de 1MB
+        byte[] buffer = new byte[1024 * 1024];
 
         while (isConnected && !shouldStop)
         {
@@ -97,7 +92,7 @@ public class HeadTrackingReceiver : MonoBehaviour
                         ProcessReceivedData(receivedData);
                     }
                 }
-                Thread.Sleep(1); // Pequeña pausa para no saturar el CPU
+                Thread.Sleep(1);
             }
             catch (Exception e)
             {
@@ -112,7 +107,6 @@ public class HeadTrackingReceiver : MonoBehaviour
         messageBuffer.Append(data);
         string bufferContent = messageBuffer.ToString();
 
-        // Procesar mensajes completos
         while (true)
         {
             int colonIndex = bufferContent.IndexOf(':');
@@ -127,7 +121,6 @@ public class HeadTrackingReceiver : MonoBehaviour
             string jsonMessage = bufferContent.Substring(colonIndex + 1, messageLength);
             bufferContent = bufferContent.Substring(totalMessageLength);
 
-            // Procesar el mensaje JSON
             try
             {
                 HeadData headData = JsonConvert.DeserializeObject<HeadData>(jsonMessage);
@@ -152,27 +145,25 @@ public class HeadTrackingReceiver : MonoBehaviour
             hasNewData = false;
         }
 
-        if (headIndicator != null && backgroundSpriteRenderer != null)
+        if (player != null && backgroundSpriteRenderer != null)
         {
             smoothedPosition = Vector2.Lerp(smoothedPosition, targetPosition, smoothingFactor * Time.deltaTime);
 
-            // Obtener tamaño del sprite en unidades mundo
             Vector3 spriteScale = backgroundSpriteRenderer.transform.localScale;
             float spriteWidth = backgroundSpriteRenderer.sprite.bounds.size.x * spriteScale.x;
             float spriteHeight = backgroundSpriteRenderer.sprite.bounds.size.y * spriteScale.y;
 
-            // Clamp de la posición normalizada para que se quede dentro del sprite
             float clampedX = Mathf.Clamp(smoothedPosition.x, 0f, 1f);
             float clampedY = Mathf.Clamp(1f - smoothedPosition.y, 0f, 1f);
 
-            // Convertir la posición normalizada clampada a posición en unidades mundo relativas al centro del sprite
             float worldX = backgroundSpriteRenderer.transform.position.x - spriteWidth / 2f + clampedX * spriteWidth;
             float worldY = backgroundSpriteRenderer.transform.position.y - spriteHeight / 2f + clampedY * spriteHeight;
 
-            Vector3 worldPos = new Vector3(worldX, worldY, headIndicator.position.z);
+            Vector3 worldPos = new Vector3(worldX, worldY, 0f);
 
-            headIndicator.position = worldPos;
+            player.SetTargetPosition(worldPos);
         }
+
     }
 
 
@@ -245,7 +236,7 @@ public class HeadTrackingReceiver : MonoBehaviour
 
         if (receiveThread != null && receiveThread.IsAlive)
         {
-            receiveThread.Join(1000); // Esperar 1 segundo máximo
+            receiveThread.Join(1000);
             if (receiveThread.IsAlive)
                 receiveThread.Abort();
         }
