@@ -119,6 +119,55 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &110181919
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 110181921}
+  - component: {fileID: 110181920}
+  m_Layer: 0
+  m_Name: Spawn Arrows Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &110181920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110181919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 840e16956958ee44fb8fb820a2219dfb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  arrowCount: 5
+  arrowPrefab: {fileID: 1038998517629770113, guid: 1be8f8e619d1cb741a44e09f4bc5ad3d, type: 3}
+  alertPrefab: {fileID: 1330464748588093473, guid: 463965c53d1c2e94ab2d602f381d90fe, type: 3}
+  playerTransform: {fileID: 1468131457}
+  spawnDistance: 10
+--- !u!4 &110181921
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110181919}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -306,6 +355,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &1468131457 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1086620977816164979, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
+  m_PrefabInstance: {fileID: 4152280235344003124}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1677383344
 GameObject:
   m_ObjectHideFlags: 0
@@ -364,9 +418,9 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingLayerID: -1388472647
+  m_SortingLayer: 1
+  m_SortingOrder: -1000
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -403,15 +457,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1086620977816164979, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1086620977816164979, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1086620977816164979, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1086620977816164979, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
       propertyPath: m_LocalPosition.x
@@ -461,6 +515,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 6236725365067132347, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
+      propertyPath: m_Radius
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 6261318724776649707, guid: 3afe8fc171859584dbf9aeb69d3601de, type: 3}
       propertyPath: mainCamera
       value: 
@@ -486,6 +544,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 519420032}
+  - {fileID: 110181921}
   - {fileID: 4152280235344003124}
   - {fileID: 1456517018}
   - {fileID: 1677383346}

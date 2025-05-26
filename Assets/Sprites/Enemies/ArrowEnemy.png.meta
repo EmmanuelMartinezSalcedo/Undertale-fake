@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 5565479ab82a9364cb8f1620003e75ba
+guid: d375ac38ca8310147a02ec188c3de49d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 406886191199188588
-    second: "Heart_coraz\xF3n.svg_0"
+      213: 1203071752668406728
+    second: ArrowEnemy_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "Heart_coraz\xF3n.svg_0"
+      name: ArrowEnemy_0
       rect:
         serializedVersion: 2
-        x: 63
-        y: 109
-        width: 1074
-        height: 982
+        x: 4
+        y: 0
+        width: 24
+        height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c66707ac5dc85a500800000000000000
-      internalID: 406886191199188588
+      spriteID: 8c36b19826b22b010800000000000000
+      internalID: 1203071752668406728
       vertices: []
       indices: 
       edges: []
@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      ArrowEnemy_0: 1203071752668406728
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
