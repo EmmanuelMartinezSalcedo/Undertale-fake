@@ -8,14 +8,6 @@ using TMPro;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-[Serializable]
-public class InitData
-{
-    public bool init;
-    public int frame_width;
-    public int frame_height;
-}
-
 [System.Serializable]
 public class HeadData
 {
@@ -40,16 +32,9 @@ public class HeadTrackingReceiver : MonoBehaviour
     public SpriteRenderer backgroundSpriteRenderer;
     public PlayerController player;
     public Camera mainCamera;
-    public SpawnArrowsController spawnArrowsController;
 
     [Header("Configuración")]
     public float smoothingFactor = 0.8f;
-
-    private bool isInitialized = false;
-
-    private bool initDataReceived = false;
-    private int initFrameWidth = 0;
-    private int initFrameHeight = 0;
 
     private TcpClient tcpClient;
     private NetworkStream stream;
@@ -136,18 +121,9 @@ public class HeadTrackingReceiver : MonoBehaviour
 
             try
             {
-                var tempObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonMessage);
-                if (tempObj != null && tempObj.ContainsKey("init") && (bool)tempObj["init"] == true)
-                {
-                    InitData initData = JsonConvert.DeserializeObject<InitData>(jsonMessage);
-                    OnInitDataReceived(initData);
-                }
-                else
-                {
-                    HeadData headData = JsonConvert.DeserializeObject<HeadData>(jsonMessage);
-                    latestHeadData = headData;
-                    hasNewData = true;
-                }
+                HeadData headData = JsonConvert.DeserializeObject<HeadData>(jsonMessage);
+                latestHeadData = headData;
+                hasNewData = true;
             }
             catch (Exception e)
             {
@@ -159,37 +135,8 @@ public class HeadTrackingReceiver : MonoBehaviour
         messageBuffer.Append(bufferContent);
     }
 
-    void OnInitDataReceived(InitData initData)
-    {
-        initFrameWidth = initData.frame_width;
-        initFrameHeight = initData.frame_height;
-        initDataReceived = true;
-    }
-
     void Update()
     {
-        if (initDataReceived && !isInitialized && initFrameWidth > 0 && initFrameHeight > 0 && backgroundSpriteRenderer != null)
-        {
-            Camera cam = mainCamera != null ? mainCamera : Camera.main;
-            if (cam == null)
-            {
-                Debug.LogWarning("No se encontró la cámara asignada ni la Main Camera");
-                return;
-            }
-
-            // Ya no hacemos cálculo ni escalado del sprite para mantener su tamaño original
-            //backgroundSpriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
-            //backgroundSpriteRenderer.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 0);
-
-            isInitialized = true;
-            initDataReceived = false;
-
-            if (spawnArrowsController != null)
-            {
-                spawnArrowsController.InitializeWithBackground(backgroundSpriteRenderer);
-            }
-        }
-
         if (hasNewData && latestHeadData != null)
         {
             ProcessHeadData(latestHeadData);
@@ -198,8 +145,8 @@ public class HeadTrackingReceiver : MonoBehaviour
 
         if (player != null && backgroundSpriteRenderer != null)
         {
-            //smoothedPosition = Vector2.Lerp(smoothedPosition, targetPosition, smoothingFactor * Time.deltaTime);
             smoothedPosition = targetPosition;
+
             Vector3 spriteScale = backgroundSpriteRenderer.transform.localScale;
             float spriteWidth = backgroundSpriteRenderer.sprite.bounds.size.x * spriteScale.x;
             float spriteHeight = backgroundSpriteRenderer.sprite.bounds.size.y * spriteScale.y;
@@ -211,8 +158,7 @@ public class HeadTrackingReceiver : MonoBehaviour
             float worldY = backgroundSpriteRenderer.transform.position.y - spriteHeight / 2f + clampedY * spriteHeight;
 
             Vector3 worldPos = new Vector3(worldX, worldY, 0f);
-
-            player.SetTargetPosition(worldPos); // Aquí es donde se actualiza la posición
+            player.SetTargetPosition(worldPos);
         }
     }
 
@@ -229,9 +175,6 @@ public class HeadTrackingReceiver : MonoBehaviour
                     new Rect(0, 0, webcamTexture.width, webcamTexture.height),
                     new Vector2(0.5f, 0.5f));
                 backgroundSpriteRenderer.sprite = newSprite;
-
-                // NO modificar la escala aquí
-                // backgroundSpriteRenderer.transform.localScale = ...  <-- ELIMINAR o COMENTAR
             }
             catch (Exception e)
             {
@@ -248,17 +191,9 @@ public class HeadTrackingReceiver : MonoBehaviour
         }
     }
 
+    void OnApplicationQuit() => Disconnect();
 
-
-    void OnApplicationQuit()
-    {
-        Disconnect();
-    }
-
-    void OnDestroy()
-    {
-        Disconnect();
-    }
+    void OnDestroy() => Disconnect();
 
     void Disconnect()
     {
@@ -272,17 +207,8 @@ public class HeadTrackingReceiver : MonoBehaviour
                 receiveThread.Abort();
         }
 
-        if (stream != null)
-        {
-            stream.Close();
-            stream = null;
-        }
-
-        if (tcpClient != null)
-        {
-            tcpClient.Close();
-            tcpClient = null;
-        }
+        stream?.Close();
+        tcpClient?.Close();
 
         if (webcamTexture != null)
         {

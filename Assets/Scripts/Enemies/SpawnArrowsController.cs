@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ public class SpawnArrowsController : MonoBehaviour
 
     [Header("References")]
     public Transform playerTransform;
-    private SpriteRenderer backgroundSprite;
+    public SpriteRenderer backgroundSprite;
 
     private float spawnDistance = 1f;
     private float alertOffset = 0.2f;
@@ -23,33 +24,30 @@ public class SpawnArrowsController : MonoBehaviour
     private List<ArrowEnemy> arrows = new List<ArrowEnemy>();
     private List<AlertBlink> alerts = new List<AlertBlink>();
 
-    private bool initialized = false;
-
-    public void InitializeWithBackground(SpriteRenderer background)
+    void Start()
     {
-        if (initialized) return;
+        StartCoroutine(InitializeAfterDelay(2f));
+    }
 
-        backgroundSprite = background;
+    IEnumerator InitializeAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
 
         if (backgroundSprite == null)
         {
-            Debug.LogError("BackgroundSpriteRenderer no puede ser nulo");
-            return;
+            Debug.LogError("El SpriteRenderer del fondo no está asignado.");
+            yield break;
         }
 
         Vector2 baseSize = backgroundSprite.sprite.bounds.size;
-        Vector3 spriteScale = backgroundSprite.transform.localScale;
+        Vector3 scale = backgroundSprite.transform.localScale;
+        Vector2 realSize = new Vector2(baseSize.x * scale.x, baseSize.y * scale.y);
 
-        float averageSize = (baseSize.x + baseSize.y) / 2f;
-        float averageScale = (spriteScale.x + spriteScale.y) / 2f;
+        spawnDistance = Mathf.Max(realSize.x, realSize.y) * 0.5f;
+        alertOffset = Mathf.Min(realSize.x, realSize.y) * 0.05f;
 
-        spawnDistance = averageSize * averageScale * 0.5f;
-        alertOffset = averageSize * averageScale * 0.05f;
-
-        initialized = true;
         SpawnArrowsAndAlerts();
     }
-
 
     void SpawnArrowsAndAlerts()
     {

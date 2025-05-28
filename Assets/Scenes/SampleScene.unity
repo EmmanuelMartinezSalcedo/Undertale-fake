@@ -155,6 +155,7 @@ MonoBehaviour:
   alertBlinkCount: 3
   alertBlinkDuration: 0.5
   playerTransform: {fileID: 1468131457}
+  backgroundSprite: {fileID: 1677383345}
 --- !u!4 &110181921
 Transform:
   m_ObjectHideFlags: 0
@@ -421,7 +422,6 @@ MonoBehaviour:
   backgroundSpriteRenderer: {fileID: 1677383345}
   player: {fileID: 4152280235344003125}
   mainCamera: {fileID: 519420031}
-  spawnArrowsController: {fileID: 110181920}
   smoothingFactor: 0.8
 --- !u!4 &1456517018
 Transform:

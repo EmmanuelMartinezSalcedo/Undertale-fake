@@ -10,7 +10,7 @@ class HeadTracker:
         self.port = port
         self.socket = None
         self.running = False
-        
+
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
@@ -19,34 +19,31 @@ class HeadTracker:
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        
-        # Inicializar webcam (resolución nativa)
+
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
-            raise RuntimeError("No se pudo abrir la cámara")
-        
+            raise RuntimeError("Camera not found.")
+
     def start_server(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket.bind((self.host, self.port))
             self.socket.listen(1)
-            print(f"Servidor iniciado en {self.host}:{self.port}")
-            print("Esperando conexión de Unity...")
-            
+            print("Waiting for unity connection...")
+
             client_socket, addr = self.socket.accept()
-            print(f"Unity conectado desde: {addr}")
-            
+            print(f"Unity cnnected at: {addr}.")
+
             self.running = True
             self.process_and_send(client_socket)
         except Exception as e:
-            print(f"Error en servidor: {e}")
+            print(f"Error at server: {e}.")
         finally:
             self.cleanup()
-    
+
     def get_nose_position(self, landmarks):
-        """Devuelve coordenadas normalizadas de la punta de la nariz"""
-        nose_tip_idx = 1  # Punto de la nariz
+        nose_tip_idx = 1
         if nose_tip_idx < len(landmarks.landmark):
             nose = landmarks.landmark[nose_tip_idx]
             return {
@@ -54,36 +51,12 @@ class HeadTracker:
                 'normalized_y': nose.y
             }
         return None
-    
+
     def process_and_send(self, client_socket):
-        # Obtener una vez las dimensiones del frame
-        ret, frame = self.cap.read()
-        if not ret:
-            print("No se pudo capturar el primer frame.")
-            return
-
-        frame = cv2.flip(frame, 1)
-        frame_height, frame_width = frame.shape[:2]
-
-        # Enviar las dimensiones solo una vez al inicio
-        init_data = {
-            'init': True,
-            'frame_width': frame_width,
-            'frame_height': frame_height
-        }
-        try:
-            init_json = json.dumps(init_data)
-            init_message = f"{len(init_json)}:{init_json}"
-            client_socket.send(init_message.encode('utf-8'))
-        except Exception as e:
-            print(f"Error enviando datos iniciales: {e}")
-            return
-
-        # Comienza el bucle principal de envío de frames y posiciones
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
-                print("Error al capturar frame")
+                print("Error at getting frame.")
                 break
 
             frame = cv2.flip(frame, 1)
@@ -107,25 +80,24 @@ class HeadTracker:
                 message = f"{len(json_data)}:{json_data}"
                 client_socket.send(message.encode('utf-8'))
             except Exception as e:
-                print(f"Error enviando datos: {e}")
+                print(f"Error sending data: {e}")
                 break
 
         client_socket.close()
 
-    
     def cleanup(self):
         self.running = False
         if self.cap:
             self.cap.release()
         if self.socket:
             self.socket.close()
-        print("Recursos liberados")
+        print("Finished processing, resources released.")
 
 if __name__ == "__main__":
     tracker = HeadTracker()
     try:
         tracker.start_server()
     except KeyboardInterrupt:
-        print("\nInterrumpido por usuario")
+        print("\nUser interrupted the process.")
     finally:
         tracker.cleanup()
