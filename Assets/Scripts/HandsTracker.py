@@ -4,23 +4,21 @@ import socket
 import json
 import base64
 
-class HeadTracker:
+class HandTracker:
     def __init__(self, host='localhost', port=12345):
         self.host = host
         self.port = port
         self.socket = None
         self.running = False
         
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.face_mesh = self.mp_face_mesh.FaceMesh(
+        self.mp_hands = mp.solutions.hands
+        self.hands = self.mp_hands.Hands(
             static_image_mode=False,
-            max_num_faces=1,
-            refine_landmarks=True,
+            max_num_hands=2,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
         
-        # Inicializar webcam (resolución nativa)
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
             raise RuntimeError("No se pudo abrir la cámara")
@@ -44,19 +42,18 @@ class HeadTracker:
         finally:
             self.cleanup()
     
-    def get_nose_position(self, landmarks):
-        """Devuelve coordenadas normalizadas de la punta de la nariz"""
-        nose_tip_idx = 1  # Punto de la nariz
-        if nose_tip_idx < len(landmarks.landmark):
-            nose = landmarks.landmark[nose_tip_idx]
+    def get_index_finger_tip_position(self, hand_landmarks):
+        """Devuelve coordenadas normalizadas X e Y del punto 8 (punta del dedo índice)"""
+        index_tip_idx = 8
+        if index_tip_idx < len(hand_landmarks.landmark):
+            point = hand_landmarks.landmark[index_tip_idx]
             return {
-                'normalized_x': nose.x,
-                'normalized_y': nose.y
+                'normalized_x': point.x,
+                'normalized_y': point.y
             }
         return None
     
     def process_and_send(self, client_socket):
-        # Obtener una vez las dimensiones del frame
         ret, frame = self.cap.read()
         if not ret:
             print("No se pudo capturar el primer frame.")
@@ -65,7 +62,6 @@ class HeadTracker:
         frame = cv2.flip(frame, 1)
         frame_height, frame_width = frame.shape[:2]
 
-        # Enviar las dimensiones solo una vez al inicio
         init_data = {
             'init': True,
             'frame_width': frame_width,
@@ -79,7 +75,6 @@ class HeadTracker:
             print(f"Error enviando datos iniciales: {e}")
             return
 
-        # Comienza el bucle principal de envío de frames y posiciones
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
@@ -88,17 +83,26 @@ class HeadTracker:
 
             frame = cv2.flip(frame, 1)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = self.face_mesh.process(rgb_frame)
+            results = self.hands.process(rgb_frame)
 
-            head_position = None
-            if results.multi_face_landmarks:
-                head_position = self.get_nose_position(results.multi_face_landmarks[0])
+            left_hand_pos = None
+            right_hand_pos = None
+
+            if results.multi_hand_landmarks and results.multi_handedness:
+                for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                    label = handedness.classification[0].label  # 'Left' o 'Right'
+                    pos = self.get_index_finger_tip_position(hand_landmarks)
+                    if label == "Left":
+                        left_hand_pos = pos
+                    elif label == "Right":
+                        right_hand_pos = pos
 
             _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
             frame_b64 = base64.b64encode(buffer).decode('utf-8')
 
             data = {
-                'head_position': head_position,
+                'left_hand_position': left_hand_pos,
+                'right_hand_position': right_hand_pos,
                 'frame_data': frame_b64
             }
 
@@ -111,7 +115,6 @@ class HeadTracker:
                 break
 
         client_socket.close()
-
     
     def cleanup(self):
         self.running = False
@@ -122,7 +125,7 @@ class HeadTracker:
         print("Recursos liberados")
 
 if __name__ == "__main__":
-    tracker = HeadTracker()
+    tracker = HandTracker()
     try:
         tracker.start_server()
     except KeyboardInterrupt:

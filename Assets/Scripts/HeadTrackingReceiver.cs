@@ -177,20 +177,9 @@ public class HeadTrackingReceiver : MonoBehaviour
                 return;
             }
 
-            float camHeight = cam.orthographicSize * 2f;
-            float camWidth = camHeight * cam.aspect;
-
-            float pixelsPerUnit = 100f;
-            float spriteWidth = initFrameWidth / pixelsPerUnit;
-            float spriteHeight = initFrameHeight / pixelsPerUnit;
-
-            float scaleX = camWidth / spriteWidth;
-            float scaleY = camHeight / spriteHeight;
-
-            float scale = Mathf.Min(scaleX, scaleY);
-
-            backgroundSpriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
-            backgroundSpriteRenderer.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 0);
+            // Ya no hacemos cálculo ni escalado del sprite para mantener su tamaño original
+            //backgroundSpriteRenderer.transform.localScale = new Vector3(scale, scale, 1f);
+            //backgroundSpriteRenderer.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 0);
 
             isInitialized = true;
             initDataReceived = false;
@@ -241,6 +230,8 @@ public class HeadTrackingReceiver : MonoBehaviour
                     new Vector2(0.5f, 0.5f));
                 backgroundSpriteRenderer.sprite = newSprite;
 
+                // NO modificar la escala aquí
+                // backgroundSpriteRenderer.transform.localScale = ...  <-- ELIMINAR o COMENTAR
             }
             catch (Exception e)
             {
@@ -256,6 +247,8 @@ public class HeadTrackingReceiver : MonoBehaviour
             );
         }
     }
+
+
 
     void OnApplicationQuit()
     {
