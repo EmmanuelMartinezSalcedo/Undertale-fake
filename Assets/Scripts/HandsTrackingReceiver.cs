@@ -6,20 +6,27 @@ using UnityEngine;
 using Newtonsoft.Json;
 
 [System.Serializable]
-public class HeadData
-{
-    public HeadPosition head_position;
-    public string frame_data;
-}
-
-[System.Serializable]
-public class HeadPosition
+public class HandPosition
 {
     public float normalized_x;
     public float normalized_y;
 }
 
-public class HeadTrackingReceiver : MonoBehaviour
+[System.Serializable]
+public class HandPositions
+{
+    public HandPosition left;
+    public HandPosition right;
+}
+
+[System.Serializable]
+public class HandData
+{
+    public HandPositions hand_positions;
+    public string frame_data;
+}
+
+public class HandsTrackingReceiver : MonoBehaviour
 {
     [Header("Configuración de Red")]
     public string serverIP = "127.0.0.1";
@@ -27,7 +34,8 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     [Header("Elementos de escena")]
     public SpriteRenderer backgroundSpriteRenderer;
-    public PlayerController player;
+    public Transform leftHandObject;
+    public Transform rightHandObject;
     public Camera mainCamera;
 
     [Header("Configuración")]
@@ -40,10 +48,14 @@ public class HeadTrackingReceiver : MonoBehaviour
     private bool shouldStop = false;
 
     private Texture2D webcamTexture;
-    private HeadData latestHeadData;
+    private HandData latestHandData;
     private bool hasNewData = false;
-    private Vector2 smoothedPosition;
-    private Vector2 targetPosition;
+
+    private Vector2 smoothedLeft;
+    private Vector2 smoothedRight;
+
+    private Vector2 targetLeft;
+    private Vector2 targetRight;
 
     private StringBuilder messageBuffer = new StringBuilder();
 
@@ -118,8 +130,8 @@ public class HeadTrackingReceiver : MonoBehaviour
 
             try
             {
-                HeadData headData = JsonConvert.DeserializeObject<HeadData>(jsonMessage);
-                latestHeadData = headData;
+                HandData handData = JsonConvert.DeserializeObject<HandData>(jsonMessage);
+                latestHandData = handData;
                 hasNewData = true;
             }
             catch (Exception e)
@@ -134,32 +146,40 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     void Update()
     {
-        if (hasNewData && latestHeadData != null)
+        if (hasNewData && latestHandData != null)
         {
-            ProcessHeadData(latestHeadData);
+            ProcessHandData(latestHandData);
             hasNewData = false;
         }
 
-        if (player != null && backgroundSpriteRenderer != null && backgroundSpriteRenderer.sprite != null)
-        {
-            smoothedPosition = targetPosition;
+        smoothedLeft = Vector2.Lerp(smoothedLeft, targetLeft, 1f - smoothingFactor);
+        smoothedRight = Vector2.Lerp(smoothedRight, targetRight, 1f - smoothingFactor);
 
-            Vector3 spriteScale = backgroundSpriteRenderer.transform.localScale;
-            float spriteWidth = backgroundSpriteRenderer.sprite.bounds.size.x * spriteScale.x;
-            float spriteHeight = backgroundSpriteRenderer.sprite.bounds.size.y * spriteScale.y;
+        Vector3 leftWorldPos = NormalizedToWorld(smoothedLeft);
+        Vector3 rightWorldPos = NormalizedToWorld(smoothedRight);
 
-            float clampedX = Mathf.Clamp(smoothedPosition.x, 0f, 1f);
-            float clampedY = Mathf.Clamp(1f - smoothedPosition.y, 0f, 1f);
+        if (leftHandObject != null)
+            leftHandObject.position = leftWorldPos;
 
-            float worldX = backgroundSpriteRenderer.transform.position.x - spriteWidth / 2f + clampedX * spriteWidth;
-            float worldY = backgroundSpriteRenderer.transform.position.y - spriteHeight / 2f + clampedY * spriteHeight;
-
-            Vector3 worldPos = new Vector3(worldX, worldY, 0f);
-            player.SetTargetPosition(worldPos);
-        }
+        if (rightHandObject != null)
+            rightHandObject.position = rightWorldPos;
     }
 
-    void ProcessHeadData(HeadData data)
+    Vector3 NormalizedToWorld(Vector2 normalized)
+    {
+        if (backgroundSpriteRenderer == null) return Vector3.zero;
+
+        Vector3 scale = backgroundSpriteRenderer.transform.localScale;
+        float width = backgroundSpriteRenderer.sprite.bounds.size.x * scale.x;
+        float height = backgroundSpriteRenderer.sprite.bounds.size.y * scale.y;
+
+        float x = backgroundSpriteRenderer.transform.position.x - width / 2f + Mathf.Clamp01(normalized.x) * width;
+        float y = backgroundSpriteRenderer.transform.position.y - height / 2f + Mathf.Clamp01(1f - normalized.y) * height;
+
+        return new Vector3(x, y, 0f);
+    }
+
+    void ProcessHandData(HandData data)
     {
         if (!string.IsNullOrEmpty(data.frame_data) && backgroundSpriteRenderer != null)
         {
@@ -179,17 +199,27 @@ public class HeadTrackingReceiver : MonoBehaviour
             }
         }
 
-        if (data.head_position != null)
+        if (data.hand_positions != null)
         {
-            targetPosition = new Vector2(
-                data.head_position.normalized_x,
-                data.head_position.normalized_y
-            );
+            if (data.hand_positions.left != null)
+            {
+                targetLeft = new Vector2(
+                    data.hand_positions.left.normalized_x,
+                    data.hand_positions.left.normalized_y
+                );
+            }
+
+            if (data.hand_positions.right != null)
+            {
+                targetRight = new Vector2(
+                    data.hand_positions.right.normalized_x,
+                    data.hand_positions.right.normalized_y
+                );
+            }
         }
     }
 
     void OnApplicationQuit() => Disconnect();
-
     void OnDestroy() => Disconnect();
 
     void Disconnect()

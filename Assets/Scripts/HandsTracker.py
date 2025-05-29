@@ -10,7 +10,7 @@ class HandTracker:
         self.port = port
         self.socket = None
         self.running = False
-        
+
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,
@@ -18,91 +18,63 @@ class HandTracker:
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        
+
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
-            raise RuntimeError("No se pudo abrir la cámara")
-        
+            raise RuntimeError("Camera not found.")
+
     def start_server(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket.bind((self.host, self.port))
             self.socket.listen(1)
-            print(f"Servidor iniciado en {self.host}:{self.port}")
-            print("Esperando conexión de Unity...")
-            
+            print("Waiting for Unity connection...")
+
             client_socket, addr = self.socket.accept()
-            print(f"Unity conectado desde: {addr}")
-            
+            print(f"Unity connected at: {addr}.")
+
             self.running = True
             self.process_and_send(client_socket)
         except Exception as e:
-            print(f"Error en servidor: {e}")
+            print(f"Error at server: {e}")
         finally:
             self.cleanup()
-    
-    def get_index_finger_tip_position(self, hand_landmarks):
-        """Devuelve coordenadas normalizadas X e Y del punto 8 (punta del dedo índice)"""
-        index_tip_idx = 8
-        if index_tip_idx < len(hand_landmarks.landmark):
-            point = hand_landmarks.landmark[index_tip_idx]
-            return {
-                'normalized_x': point.x,
-                'normalized_y': point.y
+
+    def get_hand_positions(self, multi_hand_landmarks, handedness):
+        positions = {'left': None, 'right': None}
+        for i, hand_landmarks in enumerate(multi_hand_landmarks):
+            label = handedness[i].classification[0].label.lower()  # 'left' or 'right'
+            wrist = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST]
+            positions[label] = {
+                'normalized_x': wrist.x,
+                'normalized_y': wrist.y
             }
-        return None
-    
+        return positions
+
     def process_and_send(self, client_socket):
-        ret, frame = self.cap.read()
-        if not ret:
-            print("No se pudo capturar el primer frame.")
-            return
-
-        frame = cv2.flip(frame, 1)
-        frame_height, frame_width = frame.shape[:2]
-
-        init_data = {
-            'init': True,
-            'frame_width': frame_width,
-            'frame_height': frame_height
-        }
-        try:
-            init_json = json.dumps(init_data)
-            init_message = f"{len(init_json)}:{init_json}"
-            client_socket.send(init_message.encode('utf-8'))
-        except Exception as e:
-            print(f"Error enviando datos iniciales: {e}")
-            return
-
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
-                print("Error al capturar frame")
+                print("Error at getting frame.")
                 break
 
             frame = cv2.flip(frame, 1)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.hands.process(rgb_frame)
 
-            left_hand_pos = None
-            right_hand_pos = None
-
+            hand_positions = {'left': None, 'right': None}
             if results.multi_hand_landmarks and results.multi_handedness:
-                for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-                    label = handedness.classification[0].label  # 'Left' o 'Right'
-                    pos = self.get_index_finger_tip_position(hand_landmarks)
-                    if label == "Left":
-                        left_hand_pos = pos
-                    elif label == "Right":
-                        right_hand_pos = pos
+                hand_positions = self.get_hand_positions(
+                    results.multi_hand_landmarks,
+                    results.multi_handedness
+                )
 
             _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
             frame_b64 = base64.b64encode(buffer).decode('utf-8')
 
             data = {
-                'left_hand_position': left_hand_pos,
-                'right_hand_position': right_hand_pos,
+                'hand_positions': hand_positions,
                 'frame_data': frame_b64
             }
 
@@ -111,24 +83,24 @@ class HandTracker:
                 message = f"{len(json_data)}:{json_data}"
                 client_socket.send(message.encode('utf-8'))
             except Exception as e:
-                print(f"Error enviando datos: {e}")
+                print(f"Error sending data: {e}")
                 break
 
         client_socket.close()
-    
+
     def cleanup(self):
         self.running = False
         if self.cap:
             self.cap.release()
         if self.socket:
             self.socket.close()
-        print("Recursos liberados")
+        print("Finished processing, resources released.")
 
 if __name__ == "__main__":
     tracker = HandTracker()
     try:
         tracker.start_server()
     except KeyboardInterrupt:
-        print("\nInterrumpido por usuario")
+        print("\nUser interrupted the process.")
     finally:
         tracker.cleanup()
