@@ -10,12 +10,10 @@ public class PlayerController : MonoBehaviour
     public int health = 100;
 
     private Vector2 targetPosition;
-    private bool hasTarget = false;
 
     public void SetTargetPosition(Vector2 worldPosition)
     {
         targetPosition = worldPosition;
-        hasTarget = true;
     }
 
     void Update()
@@ -27,7 +25,6 @@ public class PlayerController : MonoBehaviour
         if (Vector2.Distance(newPos, targetPosition) < 0.01f)
         {
             transform.position = targetPosition;
-            hasTarget = false;
         }
     }
 }

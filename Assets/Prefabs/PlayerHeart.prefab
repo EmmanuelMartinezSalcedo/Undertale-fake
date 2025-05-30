@@ -169,6 +169,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1086620977816164979}
   - component: {fileID: 6349947767665329785}
+  - component: {fileID: 2068581513271387592}
+  - component: {fileID: 247066827799416920}
   m_Layer: 0
   m_Name: PlayerHeart
   m_TagString: Untagged
@@ -208,9 +210,42 @@ MonoBehaviour:
   serverIP: 127.0.0.1
   serverPort: 12345
   backgroundSpriteRenderer: {fileID: 7852898539799094793}
-  player: {fileID: 204091269444350542}
+  head: {fileID: 0}
   mainCamera: {fileID: 0}
   smoothingFactor: 0.8
+--- !u!114 &2068581513271387592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3011339720059396347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  _assetId: 3352637698
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &247066827799416920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3011339720059396347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b6d3bc94fc4d34c9509e19085e9967, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  webcamBackground: {fileID: 4961118295754008712}
 --- !u!1 &4961118295754008712
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,7 +262,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &850057454287597331
 Transform:
   m_ObjectHideFlags: 0
