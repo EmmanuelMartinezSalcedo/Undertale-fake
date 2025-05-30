@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 public class GameNetworkManager : NetworkManager
 {
     [Header("Network Settings")]
-    public int port = 7777;
+    public int port = 27015;
 
     [Header("Player Prefabs")]
     public GameObject playerHeartPrefab;
@@ -51,19 +51,15 @@ public class GameNetworkManager : NetworkManager
 
         Debug.Log("=== SERVER STARTED ===");
         Debug.Log($"Local IP (LAN/WiFi): {localIP}");
-        Debug.Log($"Port: {port}");
+        Debug.Log($"Port: {port} (Changed from 7777 to avoid ISP blocking)");
         Debug.Log("Waiting for public IP...");
 
         // Add transport type logging
         Debug.Log($"Transport Type: {transport.GetType().Name}");
         Debug.Log($"Transport Available: {transport.Available()}");
 
-        // Add connection event handlers
-        transport.OnServerConnectedWithAddress += (connectionId, address) =>
-            Debug.Log($"Client connecting from: {address}, ID: {connectionId}");
-
-        transport.OnServerError += (connectionId, error, reason) =>
-            Debug.LogError($"Server Error from {connectionId}: {error} - {reason}");
+        // Test alternative ports
+        TestAlternativePorts();
     }
 
     public override void OnClientConnect()
@@ -157,7 +153,6 @@ public class GameNetworkManager : NetworkManager
             Debug.Log($"Port being tested: {port}");
             Debug.Log("Firewall Status: DISABLED");
             Debug.Log("If you still can't connect, check:");
-            Debug.Log("1. Router port forwarding settings");
             Debug.Log("2. ISP blocking (some ISPs block port 7777)");
             Debug.Log("3. Any antivirus software");
         }
@@ -172,56 +167,29 @@ public class GameNetworkManager : NetworkManager
         }
     }
 
-    public void DiagnoseNetworkSetup()
+    public void TestAlternativePorts()
     {
-        Debug.Log("=== NETWORK SETUP DIAGNOSIS ===");
-        Debug.Log($"Transport: {transport?.GetType().Name}");
-        Debug.Log($"Local IP: {GetLocalIPAddress()}");
-        Debug.Log($"Public IP: {publicIP}");
-        Debug.Log($"Port: {port}");
-        Debug.Log($"Server Active: {NetworkServer.active}");
-        Debug.Log($"Client Active: {NetworkClient.active}");
-        Debug.Log($"Is Host: {NetworkServer.active && NetworkClient.active}");
-        Debug.Log("\nCheck your router's port forwarding:");
-        Debug.Log("1. Protocol: TCP and UDP");
-        Debug.Log($"2. External Port: {port}");
-        Debug.Log($"3. Internal Port: {port}");
-        Debug.Log($"4. Internal IP: {GetLocalIPAddress()}");
-    }
+        Debug.Log("=== TESTING ALTERNATIVE PORTS ===");
+        var commonPorts = new[] { 27015, 27016, 8777, 8888 };
 
-    public void TestConnection()
-    {
-        Debug.Log("=== DETAILED CONNECTION TEST ===");
-        Debug.Log($"1. Server Status:");
-        Debug.Log($"   - Server Active: {NetworkServer.active}");
-        Debug.Log($"   - Transport Active: {transport.ServerActive()}");
-        Debug.Log($"   - Connected Players: {NetworkServer.connections.Count}");
-        Debug.Log($"2. Network Configuration:");
-        Debug.Log($"   - Transport: {transport.GetType().Name}");
-        Debug.Log($"   - Local IP: {GetLocalIPAddress()}");
-        Debug.Log($"   - Public IP: {publicIP}");
-        Debug.Log($"   - Port: {port}");
-        Debug.Log($"3. Common Issues Check:");
-        Debug.Log($"   - Is WebGL Build: {Application.platform == RuntimePlatform.WebGLPlayer}");
-        Debug.Log($"   - Is Server Only Build: {Application.isBatchMode}");
-        Debug.Log($"   - Running in Background: {Application.runInBackground}");
-        Debug.Log($"   - Max Connections: {maxConnections}");
-
-        // Try a socket test
-        try
+        foreach (var testPort in commonPorts)
         {
-            using (var socket = new System.Net.Sockets.Socket(
-                System.Net.Sockets.AddressFamily.InterNetwork,
-                System.Net.Sockets.SocketType.Stream,
-                System.Net.Sockets.ProtocolType.Tcp))
+            try
             {
-                socket.Bind(new System.Net.IPEndPoint(IPAddress.Any, port));
-                Debug.Log("   - Port binding test: SUCCESS");
+                using (var socket = new System.Net.Sockets.Socket(
+                    System.Net.Sockets.AddressFamily.InterNetwork,
+                    System.Net.Sockets.SocketType.Stream,
+                    System.Net.Sockets.ProtocolType.Tcp))
+                {
+                    socket.Bind(new System.Net.IPEndPoint(IPAddress.Any, testPort));
+                    Debug.Log($"Port {testPort} is available locally");
+                    socket.Close();
+                }
             }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"   - Port binding test FAILED: {e.Message}");
+            catch (Exception)
+            {
+                Debug.LogWarning($"Port {testPort} is NOT available locally");
+            }
         }
     }
 
