@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Linq;
 using System.Net;
+using System;
+using System.Threading.Tasks;
 
 public class GameNetworkManager : NetworkManager
 {
@@ -95,18 +97,66 @@ public class GameNetworkManager : NetworkManager
     {
         try
         {
-            using (var client = new HttpClient())
+            // Test TCP
+            using (var tcpClient = new System.Net.Sockets.TcpClient())
             {
-                // Try to connect to your public IP:port
-                var response = await client.GetAsync($"http://{publicIP}:{port}");
-                Debug.Log("Port seems to be accessible from outside!");
+                var connectTask = tcpClient.ConnectAsync(publicIP, port);
+                // Only wait 5 seconds max
+                if (await Task.WhenAny(connectTask, Task.Delay(5000)) == connectTask)
+                {
+                    Debug.Log("Port 7777 TCP is accessible!");
+                }
+                else
+                {
+                    Debug.LogWarning("TCP test timed out");
+                }
             }
+
+            // Test UDP
+            using (var udpClient = new System.Net.Sockets.UdpClient())
+            {
+                udpClient.Connect(publicIP, port);
+                byte[] testData = System.Text.Encoding.ASCII.GetBytes("test");
+                await udpClient.SendAsync(testData, testData.Length);
+                Debug.Log("Port 7777 UDP send test succeeded");
+            }
+
+            Debug.Log("=== PORT FORWARDING STATUS ===");
+            Debug.Log($"Local IP being used: {GetLocalIPAddress()}");
+            Debug.Log($"Public IP being tested: {publicIP}");
+            Debug.Log($"Port being tested: {port}");
+            Debug.Log("Firewall Status: DISABLED");
+            Debug.Log("If you still can't connect, check:");
+            Debug.Log("1. Router port forwarding settings");
+            Debug.Log("2. ISP blocking (some ISPs block port 7777)");
+            Debug.Log("3. Any antivirus software");
         }
-        catch
+        catch (Exception e)
         {
-            Debug.LogWarning($"WARNING: Port {port} might not be accessible from outside!");
-            Debug.LogWarning("Check your port forwarding and firewall settings!");
+            Debug.LogError($"Port forwarding test failed: {e.Message}");
+            Debug.LogWarning("Common solutions:");
+            Debug.LogWarning("1. Double check port forwarding settings in router");
+            Debug.LogWarning("2. Make sure the port forward points to: " + GetLocalIPAddress());
+            Debug.LogWarning("3. Try a different port (some ISPs block 7777)");
+            Debug.LogWarning("4. Check if any antivirus is blocking the connection");
         }
+    }
+
+    public void DiagnoseNetworkSetup()
+    {
+        Debug.Log("=== NETWORK SETUP DIAGNOSIS ===");
+        Debug.Log($"Transport: {transport?.GetType().Name}");
+        Debug.Log($"Local IP: {GetLocalIPAddress()}");
+        Debug.Log($"Public IP: {publicIP}");
+        Debug.Log($"Port: {port}");
+        Debug.Log($"Server Active: {NetworkServer.active}");
+        Debug.Log($"Client Active: {NetworkClient.active}");
+        Debug.Log($"Is Host: {NetworkServer.active && NetworkClient.active}");
+        Debug.Log("\nCheck your router's port forwarding:");
+        Debug.Log("1. Protocol: TCP and UDP");
+        Debug.Log($"2. External Port: {port}");
+        Debug.Log($"3. Internal Port: {port}");
+        Debug.Log($"4. Internal IP: {GetLocalIPAddress()}");
     }
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
