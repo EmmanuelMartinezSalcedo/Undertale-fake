@@ -27,7 +27,7 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     [Header("Elementos de escena")]
     public SpriteRenderer backgroundSpriteRenderer;
-    public PlayerController player;
+    public PlayerController head;
     public Camera mainCamera;
 
     [Header("Configuración")]
@@ -140,7 +140,7 @@ public class HeadTrackingReceiver : MonoBehaviour
             hasNewData = false;
         }
 
-        if (player != null && backgroundSpriteRenderer != null && backgroundSpriteRenderer.sprite != null)
+        if (head != null && backgroundSpriteRenderer != null && backgroundSpriteRenderer.sprite != null)
         {
             smoothedPosition = targetPosition;
 
@@ -155,7 +155,7 @@ public class HeadTrackingReceiver : MonoBehaviour
             float worldY = backgroundSpriteRenderer.transform.position.y - spriteHeight / 2f + clampedY * spriteHeight;
 
             Vector3 worldPos = new Vector3(worldX, worldY, 0f);
-            player.SetTargetPosition(worldPos);
+            head.SetTargetPosition(worldPos);
         }
     }
 

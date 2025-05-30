@@ -34,8 +34,8 @@ public class HandsTrackingReceiver : MonoBehaviour
 
     [Header("Elementos de escena")]
     public SpriteRenderer backgroundSpriteRenderer;
-    public Transform leftHandObject;
-    public Transform rightHandObject;
+    public PlayerController leftHand;
+    public PlayerController rightHand;
     public Camera mainCamera;
 
     [Header("Configuración")]
@@ -158,16 +158,16 @@ public class HandsTrackingReceiver : MonoBehaviour
         Vector3 leftWorldPos = NormalizedToWorld(smoothedLeft);
         Vector3 rightWorldPos = NormalizedToWorld(smoothedRight);
 
-        if (leftHandObject != null)
-            leftHandObject.position = leftWorldPos;
+        if (leftHand != null)
+            leftHand.SetTargetPosition(leftWorldPos);
 
-        if (rightHandObject != null)
-            rightHandObject.position = rightWorldPos;
+        if (rightHand != null)
+            rightHand.SetTargetPosition(rightWorldPos);
     }
 
     Vector3 NormalizedToWorld(Vector2 normalized)
     {
-        if (backgroundSpriteRenderer == null) return Vector3.zero;
+        if (backgroundSpriteRenderer == null || backgroundSpriteRenderer.sprite == null) return Vector3.zero;
 
         Vector3 scale = backgroundSpriteRenderer.transform.localScale;
         float width = backgroundSpriteRenderer.sprite.bounds.size.x * scale.x;

@@ -129,10 +129,10 @@ TextureImporter:
       name: PlayerBarrier_0
       rect:
         serializedVersion: 2
-        x: 7
+        x: 0
         y: 0
-        width: 12
-        height: 32
+        width: 13
+        height: 48
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
