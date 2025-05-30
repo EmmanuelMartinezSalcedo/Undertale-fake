@@ -2,6 +2,9 @@ using Mirror;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.NetworkInformation;
+using System.Linq;
+using System.Net;
 
 public class GameNetworkManager : NetworkManager
 {
@@ -42,10 +45,12 @@ public class GameNetworkManager : NetworkManager
     {
         base.OnStartServer();
         GetPublicIP();
-        Debug.Log($"Server started! Players should connect to:");
-        Debug.Log($"IP: {publicIP}");
+        var localIP = GetLocalIPAddress();
+
+        Debug.Log("=== SERVER STARTED ===");
+        Debug.Log($"Local IP (LAN/WiFi): {localIP}");
         Debug.Log($"Port: {port}");
-        Debug.Log("IMPORTANT: Make sure port {port} is forwarded on your router!");
+        Debug.Log("Waiting for public IP...");
     }
 
     private async void GetPublicIP()
@@ -55,12 +60,52 @@ public class GameNetworkManager : NetworkManager
             using (var client = new HttpClient())
             {
                 publicIP = await client.GetStringAsync("https://api.ipify.org");
-                Debug.Log($"Public IP: {publicIP}");
+                Debug.Log($"=== CONNECTION INFORMATION ===");
+                Debug.Log($"Public IP (Internet): {publicIP}");
+                Debug.Log($"Port: {port}");
+                Debug.Log("Players OUTSIDE your network should use:");
+                Debug.Log($"    IP: {publicIP}");
+                Debug.Log($"    Port: {port}");
+                Debug.Log("Make sure port {port} is forwarded on your router!");
+
+                // Test if port is accessible
+                TestPortForwarding();
             }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"Could not get public IP: {e.Message}");
+        }
+    }
+
+    private string GetLocalIPAddress()
+    {
+        return NetworkInterface.GetAllNetworkInterfaces()
+            .Where(x => x.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
+                       x.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+            .Where(x => x.OperationalStatus == OperationalStatus.Up)
+            .SelectMany(x => x.GetIPProperties().UnicastAddresses)
+            .Where(x => x.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            .Where(x => !IPAddress.IsLoopback(x.Address))
+            .Select(x => x.Address.ToString())
+            .FirstOrDefault();
+    }
+
+    private async void TestPortForwarding()
+    {
+        try
+        {
+            using (var client = new HttpClient())
+            {
+                // Try to connect to your public IP:port
+                var response = await client.GetAsync($"http://{publicIP}:{port}");
+                Debug.Log("Port seems to be accessible from outside!");
+            }
+        }
+        catch
+        {
+            Debug.LogWarning($"WARNING: Port {port} might not be accessible from outside!");
+            Debug.LogWarning("Check your port forwarding and firewall settings!");
         }
     }
 
