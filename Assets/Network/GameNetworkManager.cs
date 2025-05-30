@@ -53,6 +53,36 @@ public class GameNetworkManager : NetworkManager
         Debug.Log($"Local IP (LAN/WiFi): {localIP}");
         Debug.Log($"Port: {port}");
         Debug.Log("Waiting for public IP...");
+
+        // Add transport type logging
+        Debug.Log($"Transport Type: {transport.GetType().Name}");
+        Debug.Log($"Transport Available: {transport.Available()}");
+
+        // Add connection event handlers
+        transport.OnServerConnectedWithAddress += (connectionId, address) =>
+            Debug.Log($"Client connecting from: {address}, ID: {connectionId}");
+
+        transport.OnServerError += (connectionId, error, reason) =>
+            Debug.LogError($"Server Error from {connectionId}: {error} - {reason}");
+    }
+
+    public override void OnClientConnect()
+    {
+        base.OnClientConnect();
+        Debug.Log("Client successfully connected to server!");
+        Debug.Log($"Connected to address: {networkAddress}:{port}");
+    }
+
+    public override void OnClientDisconnect()
+    {
+        base.OnClientDisconnect();
+        Debug.LogError("Client disconnected from server!");
+    }
+
+    public override void OnClientError(TransportError error, string reason)
+    {
+        base.OnClientError(error, reason);
+        Debug.LogError($"Client Error: {error} - {reason}");
     }
 
     private async void GetPublicIP()
@@ -157,6 +187,42 @@ public class GameNetworkManager : NetworkManager
         Debug.Log($"2. External Port: {port}");
         Debug.Log($"3. Internal Port: {port}");
         Debug.Log($"4. Internal IP: {GetLocalIPAddress()}");
+    }
+
+    public void TestConnection()
+    {
+        Debug.Log("=== DETAILED CONNECTION TEST ===");
+        Debug.Log($"1. Server Status:");
+        Debug.Log($"   - Server Active: {NetworkServer.active}");
+        Debug.Log($"   - Transport Active: {transport.ServerActive()}");
+        Debug.Log($"   - Connected Players: {NetworkServer.connections.Count}");
+        Debug.Log($"2. Network Configuration:");
+        Debug.Log($"   - Transport: {transport.GetType().Name}");
+        Debug.Log($"   - Local IP: {GetLocalIPAddress()}");
+        Debug.Log($"   - Public IP: {publicIP}");
+        Debug.Log($"   - Port: {port}");
+        Debug.Log($"3. Common Issues Check:");
+        Debug.Log($"   - Is WebGL Build: {Application.platform == RuntimePlatform.WebGLPlayer}");
+        Debug.Log($"   - Is Server Only Build: {Application.isBatchMode}");
+        Debug.Log($"   - Running in Background: {Application.runInBackground}");
+        Debug.Log($"   - Max Connections: {maxConnections}");
+
+        // Try a socket test
+        try
+        {
+            using (var socket = new System.Net.Sockets.Socket(
+                System.Net.Sockets.AddressFamily.InterNetwork,
+                System.Net.Sockets.SocketType.Stream,
+                System.Net.Sockets.ProtocolType.Tcp))
+            {
+                socket.Bind(new System.Net.IPEndPoint(IPAddress.Any, port));
+                Debug.Log("   - Port binding test: SUCCESS");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"   - Port binding test FAILED: {e.Message}");
+        }
     }
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
