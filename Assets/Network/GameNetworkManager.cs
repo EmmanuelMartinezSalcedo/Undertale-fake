@@ -41,6 +41,7 @@ public class GameNetworkManager : NetworkManager
             hud = gameObject.AddComponent<NetworkManagerHUD>();
 
         Application.runInBackground = true;
+        networkAddress = "localhost";
     }
 
     public override void OnStartServer()
