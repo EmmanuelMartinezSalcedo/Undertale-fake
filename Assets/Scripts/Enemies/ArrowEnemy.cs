@@ -7,11 +7,12 @@ public class ArrowEnemy : MonoBehaviour
     private Transform playerTransform;
     private bool isTracking = true;
     private Vector2 travelDirection;
-
+    public float lifeTime = 5f;
     public void Initialize(Transform player)
     {
         playerTransform = player;
         isTracking = true;
+        Destroy(gameObject, lifeTime);
     }
 
     public void Shoot()

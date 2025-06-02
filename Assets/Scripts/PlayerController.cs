@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
@@ -9,7 +10,22 @@ public class PlayerController : MonoBehaviour
     public float size = 1f;
     public int health = 100;
 
+    [Header("Feedback")]
+    public float blinkDuration = 0.1f;
+    public int blinkCount = 5;
+
     private Vector2 targetPosition;
+    private SpriteRenderer spriteRenderer;
+    private bool isBlinking = false;
+
+    void Start()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            Debug.LogWarning("No SpriteRenderer found on Player!");
+        }
+    }
 
     public void SetTargetPosition(Vector2 worldPosition)
     {
@@ -26,5 +42,30 @@ public class PlayerController : MonoBehaviour
         {
             transform.position = targetPosition;
         }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Bullet"))
+        {
+            Destroy(collision.gameObject); // destruir la bala
+            StartCoroutine(BlinkEffect());
+            // health -= daño si lo necesitas
+        }
+    }
+
+    private IEnumerator BlinkEffect()
+    {
+        if (isBlinking || spriteRenderer == null) yield break;
+
+        isBlinking = true;
+        for (int i = 0; i < blinkCount; i++)
+        {
+            spriteRenderer.enabled = false;
+            yield return new WaitForSeconds(blinkDuration);
+            spriteRenderer.enabled = true;
+            yield return new WaitForSeconds(blinkDuration);
+        }
+        isBlinking = false;
     }
 }

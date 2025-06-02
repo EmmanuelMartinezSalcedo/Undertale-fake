@@ -4,9 +4,15 @@ using System.Collections.Generic;
 
 public class BulletHellManager : MonoBehaviour
 {
+    [Header("Attack Patterns")]
     public List<AttackPattern> patterns;
-    public Transform attackOrigin;
-    public float patternDelay = 2f; // Tiempo entre patrones
+
+    [Header("References")]
+    public Transform playerTransform;
+    public List<Transform> attackPoints;
+
+    [Header("Timing")]
+    public float patternDelay = 2f;
 
     private void Start()
     {
@@ -21,8 +27,12 @@ public class BulletHellManager : MonoBehaviour
             {
                 Debug.Log("Starting pattern: " + pattern.name);
 
-                // Ejecuta el patrón directamente
-                yield return StartCoroutine(pattern.Execute(attackOrigin));
+                Transform chosenPoint = attackPoints.Count > 0
+                    ? attackPoints[Random.Range(0, attackPoints.Count)]
+                    : playerTransform; // Fallback
+
+                AttackContext context = new AttackContext(playerTransform, chosenPoint);
+                yield return StartCoroutine(pattern.Execute(context));
 
                 yield return new WaitForSeconds(patternDelay);
             }
