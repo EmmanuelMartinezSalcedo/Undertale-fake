@@ -396,6 +396,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   requiredHoverTime: 2
   cursor: {fileID: 220991226}
+  targetButton: {fileID: 1097759397}
+  normalColor: {r: 0, g: 0, b: 0, a: 0.39215687}
+  hoverColor: {r: 0, g: 0, b: 0, a: 1}
+  colorLerpSpeed: 5
 --- !u!1001 &1204300128
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -910,6 +914,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   requiredHoverTime: 2
   cursor: {fileID: 220991226}
+  targetButton: {fileID: 1389560136}
+  normalColor: {r: 0, g: 0, b: 0, a: 0.39215687}
+  hoverColor: {r: 0, g: 0, b: 0, a: 1}
+  colorLerpSpeed: 5
 --- !u!1 &1402149017
 GameObject:
   m_ObjectHideFlags: 0
@@ -1534,6 +1542,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   requiredHoverTime: 2
   cursor: {fileID: 220991226}
+  targetButton: {fileID: 2045251784}
+  normalColor: {r: 0, g: 0, b: 0, a: 0.39215687}
+  hoverColor: {r: 0, g: 0, b: 0, a: 1}
+  colorLerpSpeed: 5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
