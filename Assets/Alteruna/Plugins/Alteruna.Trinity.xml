@@ -1646,7 +1646,22 @@
       <param name="y">Size of force along the world y-axis.</param>
       <param name="mode">	Type of force to apply.</param>
     </member>
+    <member name="M:Alteruna.Rigidbody2DSynchronizable.AddForce(System.Single,System.Single,UnityEngine.ForceMode2D)">
+      <summary>
+            Adds a force to the Rigidbody.
+            </summary>
+      <param name="x">Size of force along the world x-axis.</param>
+      <param name="y">Size of force along the world y-axis.</param>
+      <param name="mode">	Type of force to apply.</param>
+    </member>
     <member name="M:Alteruna.Rigidbody2DSynchronizable.AddForce(UnityEngine.Vector2,UnityEngine.ForceMode)">
+      <summary>
+            Adds a force to the Rigidbody.
+            </summary>
+      <param name="force">Force vector in world coordinates.</param>
+      <param name="mode">	Type of force to apply.</param>
+    </member>
+    <member name="M:Alteruna.Rigidbody2DSynchronizable.AddForce(UnityEngine.Vector2,UnityEngine.ForceMode2D)">
       <summary>
             Adds a force to the Rigidbody.
             </summary>

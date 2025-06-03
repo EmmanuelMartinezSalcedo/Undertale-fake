@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 8033bab9b349e844d89258d1cbef31c6
+guid: 0403381a95a85004c860d57c341d6944
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -121,10 +121,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 217234
-  packageName: "Alteruna Multiplayer SDK \u2013 Free Cloud Solution"
-  packageVersion: 1.3.4u11
-  assetPath: Assets/Alteruna/Media/Alteruna Logo.png
-  uploadId: 729234

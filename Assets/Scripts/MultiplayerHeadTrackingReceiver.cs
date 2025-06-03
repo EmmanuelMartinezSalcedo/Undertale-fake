@@ -41,7 +41,7 @@ public class MultiplayerHeadTrackingReceiver : MonoBehaviour
     {
         Thread.Sleep(2000);
         StartPythonConnection();
-        Thread.Sleep(2000);
+        Thread.Sleep(5000);
         webcamTexture = new Texture2D(2, 2);
         ConnectToServer();
     }
