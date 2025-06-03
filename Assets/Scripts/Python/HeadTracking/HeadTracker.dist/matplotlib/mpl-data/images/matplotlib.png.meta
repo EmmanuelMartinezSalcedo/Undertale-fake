@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      matplotlib_0: 7653471926976639420
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

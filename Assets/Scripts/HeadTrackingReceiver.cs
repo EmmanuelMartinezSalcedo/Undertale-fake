@@ -49,8 +49,11 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     private StringBuilder messageBuffer = new StringBuilder();
 
+    private Process pythonProcess;
+
     void Start()
     {
+        Thread.Sleep(2000);
         StartPythonConnection();
         Thread.Sleep(2000);
         webcamTexture = new Texture2D(2, 2);
@@ -71,19 +74,33 @@ public class HeadTrackingReceiver : MonoBehaviour
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
 
-            string currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+            string currentPath = System.Environment.GetEnvironmentVariable("PATH") ?? "";
             string exeDir = Path.GetDirectoryName(exePath);
             startInfo.EnvironmentVariables["PATH"] = exeDir + ";" + currentPath;
 
-            Process process = new Process();
-            process.StartInfo = startInfo;
+            pythonProcess = new Process();
+            pythonProcess.StartInfo = startInfo;
 
-            process.OutputDataReceived += (sender, args) => { };
-            process.ErrorDataReceived += (sender, args) => { };
+            pythonProcess.OutputDataReceived += (sender, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                    UnityEngine.Debug.Log("[PYTHON] " + args.Data);
+            };
 
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            UnityEngine.Debug.Log("Ignore the next Debug");
+            pythonProcess.ErrorDataReceived += (sender, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                    UnityEngine.Debug.Log("[PYTHON] " + args.Data);
+            };
+
+            pythonProcess.Start();
+            pythonProcess.BeginOutputReadLine();
+            pythonProcess.BeginErrorReadLine();
+        }
+        else
+        {
+            UnityEngine.Debug.LogError("HeadTracker.exe not found at: " + exePath);
         }
     }
 
@@ -225,8 +242,16 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     void OnApplicationQuit() => Disconnect();
 
-    void OnDestroy() => Disconnect();
-
+    void OnDestroy()
+    {
+        Disconnect();
+        if (pythonProcess != null && !pythonProcess.HasExited)
+        {
+            pythonProcess.Kill();
+            pythonProcess.Dispose();
+            pythonProcess = null;
+        }
+    }
     void Disconnect()
     {
         shouldStop = true;
