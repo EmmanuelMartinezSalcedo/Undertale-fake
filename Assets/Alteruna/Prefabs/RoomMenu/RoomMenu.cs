@@ -34,7 +34,7 @@ namespace Alteruna
 		{
 			if (Multiplayer == null)
 			{
-				Multiplayer = FindObjectOfType<Multiplayer>();
+				Multiplayer = FindFirstObjectByType<Multiplayer>();
 			}
 
 			if (Multiplayer == null)

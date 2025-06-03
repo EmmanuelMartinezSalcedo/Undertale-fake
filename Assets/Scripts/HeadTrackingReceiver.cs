@@ -4,6 +4,8 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using Newtonsoft.Json;
+using System.Diagnostics;
+using System.IO;
 
 [System.Serializable]
 public class HeadData
@@ -49,9 +51,42 @@ public class HeadTrackingReceiver : MonoBehaviour
 
     void Start()
     {
+        StartPythonConnection();
+        Thread.Sleep(2000);
         webcamTexture = new Texture2D(2, 2);
         ConnectToServer();
     }
+
+    void StartPythonConnection()
+    {
+        string relativePath = "Scripts/Python/HeadTracking/HeadTracker.exe";
+        string exePath = Path.Combine(Application.dataPath, relativePath);
+
+        if (File.Exists(exePath))
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = exePath;
+            startInfo.UseShellExecute = false;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.CreateNoWindow = true;
+
+            string currentPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+            string exeDir = Path.GetDirectoryName(exePath);
+            startInfo.EnvironmentVariables["PATH"] = exeDir + ";" + currentPath;
+
+            Process process = new Process();
+            process.StartInfo = startInfo;
+
+            process.OutputDataReceived += (sender, args) => { };
+            process.ErrorDataReceived += (sender, args) => { };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+        }
+    }
+
 
     void ConnectToServer()
     {
@@ -66,7 +101,7 @@ public class HeadTrackingReceiver : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error conectando al servidor: {e.Message}");
+            UnityEngine.Debug.LogError($"Error conectando al servidor: {e.Message}");
         }
     }
 
@@ -91,7 +126,7 @@ public class HeadTrackingReceiver : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error recibiendo datos: {e.Message}");
+                UnityEngine.Debug.LogError($"Error recibiendo datos: {e.Message}");
                 break;
             }
         }
@@ -124,7 +159,7 @@ public class HeadTrackingReceiver : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error parseando JSON: {e.Message}");
+                UnityEngine.Debug.LogError($"Error parseando JSON: {e.Message}");
             }
         }
 
@@ -175,7 +210,7 @@ public class HeadTrackingReceiver : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error cargando imagen: {e.Message}");
+                UnityEngine.Debug.LogError($"Error cargando imagen: {e.Message}");
             }
         }
 

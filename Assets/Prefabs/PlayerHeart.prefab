@@ -159,6 +159,8 @@ MonoBehaviour:
   speed: 1
   size: 1
   health: 100
+  blinkDuration: 0.1
+  blinkCount: 5
 --- !u!1 &3011339720059396347
 GameObject:
   m_ObjectHideFlags: 0
@@ -208,7 +210,7 @@ MonoBehaviour:
   serverIP: 127.0.0.1
   serverPort: 12345
   backgroundSpriteRenderer: {fileID: 7852898539799094793}
-  head: {fileID: 0}
+  head: {fileID: 204091269444350542}
   mainCamera: {fileID: 0}
   smoothingFactor: 0.8
 --- !u!1 &4961118295754008712
