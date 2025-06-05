@@ -17,6 +17,11 @@ public class ArrowRainAttack : AttackPattern
     private float spawnDistance = 1f;
     private float alertOffset = 0.5f;
 
+    private void OnEnable()
+    {
+        patternType = "Arrow";
+    }
+
     public override IEnumerator Execute(AttackContext context)
     {
         Camera cam = Camera.main;

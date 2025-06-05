@@ -9,7 +9,10 @@ public class BulletHellManager : MonoBehaviour
 
     [Header("References")]
     public Transform playerTransform;
-    public List<Transform> attackPoints;
+    public List<Transform> circleAttackPoints;
+
+    [Header("Blaster Settings")]
+    public List<Transform> blasterAttackPoints;
 
     [Header("Timing")]
     public float patternDelay = 2f;
@@ -25,11 +28,30 @@ public class BulletHellManager : MonoBehaviour
         {
             foreach (AttackPattern pattern in patterns)
             {
-                Debug.Log("Starting pattern: " + pattern.name);
+                Debug.Log("Starting pattern: " + pattern.patternType);
 
-                Transform chosenPoint = attackPoints.Count > 0
-                    ? attackPoints[Random.Range(0, attackPoints.Count)]
-                    : playerTransform; // Fallback
+                Transform chosenPoint = playerTransform;
+
+                if (pattern.patternType == "Circle" && circleAttackPoints.Count > 0)
+                {
+                    chosenPoint = circleAttackPoints[Random.Range(0, circleAttackPoints.Count)];
+                }
+                else if (pattern.patternType == "Arrow")
+                {
+                    chosenPoint = playerTransform;
+                }
+                else if (pattern.patternType == "Blaster")
+                {
+                    if (blasterAttackPoints.Count > 0)
+                    {
+                        chosenPoint = blasterAttackPoints[Random.Range(0, blasterAttackPoints.Count)];
+                    }
+                    else
+                    {
+                        Debug.LogWarning("No blaster attack points assigned!");
+                        chosenPoint = transform;
+                    }
+                }
 
                 AttackContext context = new AttackContext(playerTransform, chosenPoint);
                 yield return StartCoroutine(pattern.Execute(context));

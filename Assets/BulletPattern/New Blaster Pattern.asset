@@ -9,13 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c0ff42dc297e1344a96cf8571e34a20, type: 3}
-  m_Name: CircularPattern1
+  m_Script: {fileID: 11500000, guid: 2f542e144fd0ff445b2ee0730899b5ec, type: 3}
+  m_Name: New Blaster Pattern
   m_EditorClassIdentifier: 
-  patternType: Circle
+  patternType: Blaster
   duration: 3
-  bulletPrefab: {fileID: 8025923629429340744, guid: 27e24c48daceaa74884a2cc1a4c11312, type: 3}
-  bulletCount: 12
-  bulletSpeed: 4
-  timeBetweenBursts: 0.2
-  rotationPerBurst: 10
+  blasterPrefab: {fileID: 3416797610668582009, guid: c2c857968d0466e4eb3bd817fc173fc8, type: 3}
+  rows: 4
+  columns: 1
+  spacing: 4
