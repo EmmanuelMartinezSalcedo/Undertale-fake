@@ -39,14 +39,13 @@ public class MultiplayerHeadTrackingReceiver : MonoBehaviour
 
     void Start()
     {
-        Thread.Sleep(2000);
         StartPythonConnection();
-        Thread.Sleep(5000);
+        Thread.Sleep(10000);
         webcamTexture = new Texture2D(2, 2);
         ConnectToServer();
     }
 
-    void StartPythonConnection()
+    public void StartPythonConnection()
     {
         string relativePath = "Scripts/Python/HeadTracking/HeadTracker.exe";
         string exePath = Path.Combine(Application.dataPath, relativePath);
@@ -90,7 +89,6 @@ public class MultiplayerHeadTrackingReceiver : MonoBehaviour
         }
     }
 
-
     void ConnectToServer()
     {
         try
@@ -99,8 +97,20 @@ public class MultiplayerHeadTrackingReceiver : MonoBehaviour
             stream = tcpClient.GetStream();
             isConnected = true;
 
-            receiveThread = new Thread(ReceiveData);
-            receiveThread.Start();
+            byte[] buffer = new byte[1024];
+            int bytesRead = stream.Read(buffer, 0, buffer.Length);
+            string serverMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+
+            if (serverMessage == "READY")
+            {
+                UnityEngine.Debug.Log("Python server is ready. Starting receive thread...");
+                receiveThread = new Thread(ReceiveData);
+                receiveThread.Start();
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("Unexpected message from Python server: " + serverMessage);
+            }
         }
         catch (Exception e)
         {

@@ -547,10 +547,34 @@ MonoBehaviour:
       m_Calls: []
   OnRoomCreated:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 6031955116031230793, guid: 990036ad1010daa45bf6c5cd52195186, type: 3}
+        m_TargetAssemblyTypeName: MultiplayerHeadTrackingReceiver, Assembly-CSharp
+        m_MethodName: StartPythonConnection
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 1
   OnRoomJoined:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 6031955116031230793, guid: 990036ad1010daa45bf6c5cd52195186, type: 3}
+        m_TargetAssemblyTypeName: MultiplayerHeadTrackingReceiver, Assembly-CSharp
+        m_MethodName: StartPythonConnection
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 1
   OnRoomLeft:
     m_PersistentCalls:
       m_Calls: []

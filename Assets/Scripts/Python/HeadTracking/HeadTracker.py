@@ -35,6 +35,8 @@ class HeadTracker:
             client_socket, addr = self.socket.accept()
             print(f"Unity cnnected at: {addr}.")
 
+            client_socket.send(b"READY\n")
+
             self.running = True
             self.process_and_send(client_socket)
         except Exception as e:
